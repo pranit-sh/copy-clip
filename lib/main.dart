@@ -111,7 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.white.withAlpha(204),
               onPressed: () {
                 launchUrl(
-                  Uri.parse('https://github.com/your-repo/issues'),
+                  Uri.parse('https://github.com/pranit-sh/copy-clip/issues'),
                 );
               },
             ),

@@ -24,7 +24,7 @@ class ClipTabContent extends StatelessWidget {
         items.isEmpty
             ? Center(
                 child: Text(
-                  'No items available',
+                  'No clips available',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.black.withAlpha(77),

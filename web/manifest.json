@@ -1,13 +1,14 @@
 {
-	"name": "Copy Clip",
-	"description": "Copy Clip",
+	"name": "CopyClip: Clipboard For Chrome",
+	"short_name": "CopyClip",
+	"description": "Clipboard for Chrome. Copying your clips just one click away. Easy search, custom labels and pinned clips.",
 	"version": "1.0.0",
 	"content_security_policy": {
 		"extension_pages": "script-src 'self' ; object-src 'self'"
 	},
 	"action": {
 		"default_popup": "index.html",
-		"default_icon": "icons/Icon-192.png"
+		"default_icon": "icons/copy-clip-192.png"
 	},
 	"manifest_version": 3
 }
