@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'clip_bottom_sheet.dart';
 import 'clip_list_item.dart';
+import 'clipboard_peek_card.dart';
 import 'kbd_chip.dart';
 import 'search.dart';
 import '../helper/clip_note_provider.dart';
@@ -20,25 +21,50 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   final _listFocus = FocusNode();
   String _query = '';
   int _focusedIndex = 0;
 
+  /// Latest text seen on the system clipboard (for the peek card).
+  String? _clipboardText;
+
+  /// Clipboard texts the user explicitly dismissed this session.
+  final Set<String> _dismissedClipboardTexts = <String>{};
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Listen for text sent from the Chrome extension context menu.
     WebBridge.onSelectionCaptured = (selection) {
       if (!mounted) return;
       _openEditor(prefillText: selection);
     };
+    // Initial clipboard read after first frame (so we can access services).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshClipboard());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshClipboard();
+    }
+  }
+
+  Future<void> _refreshClipboard() async {
+    final text = await readClipboardText();
+    if (!mounted) return;
+    if (text != _clipboardText) {
+      setState(() => _clipboardText = text);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocus.dispose();
     _listFocus.dispose();
@@ -91,6 +117,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     await _openEditor(prefillText: text);
+    // Clear the peek card once handled.
+    setState(() => _clipboardText = null);
+  }
+
+  void _dismissClipboardPeek() {
+    if (_clipboardText != null) {
+      _dismissedClipboardTexts.add(_clipboardText!);
+      setState(() => _clipboardText = null);
+    }
   }
 
   void _handleShortcut(KeyEvent event, List<Clip> visible) {
@@ -167,12 +202,18 @@ class _HomeScreenState extends State<HomeScreen> {
             appBar: _buildAppBar(context),
             body: Column(
               children: [
-                _buildQuickBar(context, provider),
+                if (_shouldShowPeek(provider))
+                  ClipboardPeekCard(
+                    text: _clipboardText!,
+                    onSave: _saveFromClipboard,
+                    onDismiss: _dismissClipboardPeek,
+                  ),
                 Expanded(
                   child: visible.isEmpty
                       ? _buildEmptyState()
                       : _buildList(visible, provider),
                 ),
+                _buildFooter(),
               ],
             ),
           ),
@@ -216,64 +257,42 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'New clip (N)',
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: () => _openEditor(),
+                borderRadius: BorderRadius.circular(8),
+                child: const SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 20,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Report a bug',
-          iconSize: 18,
-          color: Colors.white.withValues(alpha: 0.85),
-          icon: const Icon(Icons.bug_report_outlined),
-          onPressed: () => launchUrl(
-            Uri.parse('https://github.com/pranit-sh/copy-clip/issues'),
-          ),
-        ),
-      ],
+      actions: const [],
     );
   }
 
-  Widget _buildQuickBar(BuildContext context, ClipNoteProvider p) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _saveFromClipboard,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primary,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                side: const BorderSide(color: AppTheme.border),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: const Icon(Icons.download_rounded, size: 15),
-              label: const Text(
-                'Save from clipboard',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          FilledButton.icon(
-            onPressed: () => _openEditor(),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            icon: const Icon(Icons.add_rounded, size: 16),
-            label: const Text(
-              'New',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
+  bool _shouldShowPeek(ClipNoteProvider provider) {
+    final t = _clipboardText;
+    if (t == null || t.isEmpty) return false;
+    if (_dismissedClipboardTexts.contains(t)) return false;
+    // Skip if we already have this text saved.
+    for (final c in provider.items) {
+      if (c.text.trim() == t) return false;
+    }
+    return true;
   }
 
   Widget _buildEmptyState() {
@@ -372,6 +391,63 @@ class _HomeScreenState extends State<HomeScreen> {
           }),
         ],
       ],
+    );
+  }
+
+  Widget _buildFooter() {
+    final linkStyle = TextStyle(
+      fontSize: 10,
+      color: AppTheme.textSecondary.withValues(alpha: 0.9),
+      fontWeight: FontWeight.w500,
+    );
+    final dotStyle = TextStyle(
+      fontSize: 10,
+      color: AppTheme.textSecondary.withValues(alpha: 0.45),
+    );
+    return Container(
+      height: 26,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: AppTheme.bg,
+        border: Border(
+          top: BorderSide(color: AppTheme.border, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => launchUrl(
+              Uri.parse('https://github.com/pranit-sh/copy-clip/issues'),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Text('Report a bug', style: linkStyle),
+            ),
+          ),
+          Text(' · ', style: dotStyle),
+          InkWell(
+            onTap: () => launchUrl(
+              Uri.parse('https://github.com/pranit-sh/copy-clip'),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Text('GitHub', style: linkStyle),
+            ),
+          ),
+          const Spacer(),
+          InkWell(
+            onTap: () => launchUrl(
+              Uri.parse('https://github.com/pranit-sh'),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Text('by @pranit-sh', style: linkStyle),
+            ),
+          ),
+          Text(' · ', style: dotStyle),
+          Text('v2.0.0', style: linkStyle),
+        ],
+      ),
     );
   }
 
