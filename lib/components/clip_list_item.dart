@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../models/clip.dart';
 import '../util/theme.dart';
+import 'clip_tag_strip.dart';
 
 /// Compact, tap-to-copy card with hover actions.
 class ClipListItem extends StatefulWidget {
@@ -12,6 +13,7 @@ class ClipListItem extends StatefulWidget {
   final VoidCallback onTogglePin;
   final VoidCallback onRemove;
   final VoidCallback onEdit;
+  final ValueChanged<String>? onTagTap;
 
   /// When non-null, a drag handle is shown on the left. The int is the
   /// item's index within the surrounding [ReorderableListView].
@@ -26,6 +28,7 @@ class ClipListItem extends StatefulWidget {
     required this.onRemove,
     required this.onEdit,
     this.reorderIndex,
+    this.onTagTap,
   });
 
   @override
@@ -133,6 +136,8 @@ class _ClipListItemState extends State<ClipListItem> {
                             : AppTheme.textPrimary,
                       ),
                     ),
+                    if (c.allTags.isNotEmpty)
+                      ClipTagStrip(clip: c, onTagTap: widget.onTagTap),
                   ],
                 ),
               ),

@@ -5,11 +5,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'search.dart';
+import 'tag_filter_bar.dart';
 import 'clip_bottom_sheet.dart';
 import 'clip_list_item.dart';
 import 'clipboard_peek_card.dart';
 import 'kbd_chip.dart';
-import 'search.dart';
 import '../helper/clip_note_provider.dart';
 import '../models/clip.dart';
 import '../util/theme.dart';
@@ -28,6 +29,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _listFocus = FocusNode();
   String _query = '';
   int _focusedIndex = 0;
+
+  /// Currently selected tag filter, or null for "all clips".
+  String? _activeTag;
 
   /// Latest visible list, refreshed on every build so the hardware key
   /// handler can act on the current filtered results.
@@ -97,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _openEditor({Clip? edit, String? prefillText}) async {
     final provider = context.read<ClipNoteProvider>();
+    final suggestions = provider.userTagUsage.map((u) => u.tag).toList();
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -107,12 +112,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       builder: (_) => ClipEditorSheet(
         initial: edit,
         prefillText: prefillText,
+        tagSuggestions: suggestions,
         onSave: (c) async {
           if (edit == null) {
             await provider.addClip(c);
             _snack('Clip saved');
           } else {
-            await provider.updateClip(c.id, text: c.text, title: c.title);
+            await provider.updateClip(
+              c.id,
+              text: c.text,
+              title: c.title,
+              userTags: c.userTags,
+            );
             _snack('Clip updated');
           }
         },
@@ -199,14 +210,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         setState(() => _query = '');
         return true;
       }
+      if (_activeTag != null) {
+        setState(() => _activeTag = null);
+        return true;
+      }
     }
     return false;
+  }
+
+  void _onTagTap(String tag) {
+    setState(() {
+      _activeTag = (_activeTag == tag) ? null : tag;
+      _focusedIndex = 0;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ClipNoteProvider>();
-    final visible = provider.search(_query);
+    final visible = provider.search(_query, activeTag: _activeTag);
 
     // Keep focused index in-bounds when list shrinks.
     if (_focusedIndex >= visible.length) {
@@ -220,6 +242,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       appBar: _buildAppBar(context),
       body: Column(
         children: [
+          TagFilterBar(
+            usage: provider.userTagUsage,
+            activeTag: _activeTag,
+            onTagSelected: (t) => setState(() {
+              _activeTag = t;
+              _focusedIndex = 0;
+            }),
+          ),
           if (_shouldShowPeek(provider))
             ClipboardPeekCard(
               text: _clipboardText!,
@@ -381,6 +411,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   onTogglePin: () => provider.togglePin(clip.id),
                   onRemove: () => _confirmDelete(clip, provider),
                   onEdit: () => _openEditor(edit: clip),
+                  onTagTap: _onTagTap,
                 ),
               );
             },
@@ -398,6 +429,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               onTogglePin: () => provider.togglePin(clip.id),
               onRemove: () => _confirmDelete(clip, provider),
               onEdit: () => _openEditor(edit: clip),
+              onTagTap: _onTagTap,
             );
           }),
         ],

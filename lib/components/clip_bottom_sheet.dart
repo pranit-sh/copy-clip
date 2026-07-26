@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/clip.dart';
 import '../util/theme.dart';
 import 'kbd_chip.dart';
+import 'tag_chip_field.dart';
 
 /// Bottom sheet used both for creating and editing a clip.
 class ClipEditorSheet extends StatefulWidget {
@@ -11,11 +12,16 @@ class ClipEditorSheet extends StatefulWidget {
   final String? prefillText;
   final ValueChanged<Clip> onSave;
 
+  /// Existing tags across the whole store — used to power autocomplete
+  /// suggestions in the tag input.
+  final List<String> tagSuggestions;
+
   const ClipEditorSheet({
     super.key,
     this.initial,
     this.prefillText,
     required this.onSave,
+    this.tagSuggestions = const [],
   });
 
   @override
@@ -26,6 +32,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   late final TextEditingController _text;
   late final TextEditingController _title;
   final _textFocus = FocusNode();
+  late List<String> _tags;
 
   @override
   void initState() {
@@ -34,6 +41,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
       text: widget.initial?.text ?? widget.prefillText ?? '',
     );
     _title = TextEditingController(text: widget.initial?.title ?? '');
+    _tags = List<String>.from(widget.initial?.userTags ?? const []);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _textFocus.requestFocus();
     });
@@ -54,6 +62,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     final saved = (widget.initial ?? Clip(text: text)).copyWith(
       text: text,
       title: title,
+      userTags: _tags,
     );
     widget.onSave(saved);
     Navigator.of(context).pop();
@@ -190,6 +199,12 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                 hint: 'A short label so you find it later',
                 action: TextInputAction.done,
                 onSubmitted: _save,
+              ),
+              const SizedBox(height: 10),
+              TagChipField(
+                value: _tags,
+                onChanged: (v) => setState(() => _tags = v),
+                suggestions: widget.tagSuggestions,
               ),
               const SizedBox(height: 14),
               Row(
