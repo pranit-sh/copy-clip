@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// Clipboard texts the user explicitly dismissed this session.
   final Set<String> _dismissedClipboardTexts = <String>{};
+  int _snackSerial = 0;
 
   @override
   void initState() {
@@ -88,15 +89,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _snack(String message, {SnackBarAction? action}) {
-    ScaffoldMessenger.of(context)
+    const duration = Duration(milliseconds: 1400);
+    final snackSerial = ++_snackSerial;
+    final messenger = ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          duration: const Duration(milliseconds: 1400),
+          duration: duration,
           action: action,
         ),
       );
+
+    Future.delayed(duration, () {
+      if (!mounted || snackSerial != _snackSerial) return;
+      messenger.hideCurrentSnackBar();
+    });
   }
 
   Future<void> _openEditor({Clip? edit, String? prefillText}) async {
@@ -269,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(60),
+      preferredSize: const Size.fromHeight(52),
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -288,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: Row(
               children: [
                 // Brand mark
@@ -296,8 +304,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: SvgPicture.asset(
                     'assets/logo.svg',
-                    width: 24,
-                    height: 24,
+                    width: 22,
+                    height: 22,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -558,7 +566,7 @@ class _NewClipButtonState extends State<_NewClipButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
-          height: 36,
+          height: 32,
           decoration: BoxDecoration(
             color: _hovered
                 ? Colors.white

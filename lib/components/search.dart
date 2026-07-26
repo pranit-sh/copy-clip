@@ -31,7 +31,7 @@ class SearchField extends StatelessWidget {
       style: const TextStyle(color: Colors.white, fontSize: 13),
       decoration: InputDecoration(
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(vertical: 6),
         hintText: 'Search clips…',
         hintStyle: TextStyle(
           color: Colors.white.withValues(alpha: 0.7),
@@ -43,7 +43,7 @@ class SearchField extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.85),
         ),
         prefixIconConstraints:
-            const BoxConstraints(minWidth: 36, minHeight: 36),
+          const BoxConstraints(minWidth: 34, minHeight: 32),
         suffixIcon: hasText
             ? IconButton(
                 padding: EdgeInsets.zero,
@@ -66,7 +66,7 @@ class SearchField extends StatelessWidget {
                 ),
               ),
         suffixIconConstraints:
-            const BoxConstraints(minWidth: 32, minHeight: 36),
+            const BoxConstraints(minWidth: 30, minHeight: 32),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.18),
         enabledBorder: OutlineInputBorder(
