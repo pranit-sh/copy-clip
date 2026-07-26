@@ -29,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _query = '';
   int _focusedIndex = 0;
 
+  /// Latest visible list, refreshed on every build so the hardware key
+  /// handler can act on the current filtered results.
+  List<Clip> _visible = const [];
+
   /// Latest text seen on the system clipboard (for the peek card).
   String? _clipboardText;
 
@@ -39,6 +43,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Register a hardware-level key handler. Unlike Shortcuts/CallbackShortcuts
+    // this does NOT depend on any Focus node being in the current focus chain,
+    // which matters for a Chrome-extension popup where focus can end up in a
+    // subtree we don't control (or nowhere at all) after modals/text fields.
+    HardwareKeyboard.instance.addHandler(_onHardwareKey);
     // Listen for text sent from the Chrome extension context menu.
     WebBridge.onSelectionCaptured = (selection) {
       if (!mounted) return;
@@ -65,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onHardwareKey);
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocus.dispose();
@@ -129,38 +139,68 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _handleShortcut(KeyEvent event, List<Clip> visible) {
-    if (event is! KeyDownEvent) return;
+  /// Global hardware-key handler. Returns `true` when we've consumed the key
+  /// so Flutter won't dispatch it further. Modifier combos (⌘K/⌘E/⌘⇧V) fire
+  /// regardless of focus; arrow/enter/escape only fire when the search field
+  /// doesn't have focus (so typing in search still works normally).
+  bool _onHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
     final key = event.logicalKey;
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    final meta = keys.contains(LogicalKeyboardKey.metaLeft) ||
+        keys.contains(LogicalKeyboardKey.metaRight);
+    final ctrl = keys.contains(LogicalKeyboardKey.controlLeft) ||
+        keys.contains(LogicalKeyboardKey.controlRight);
+    final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight);
+    final mod = meta || ctrl;
     final searchHasFocus = _searchFocus.hasFocus;
 
+    // ⌘/Ctrl + K → focus search
+    if (mod && !shift && key == LogicalKeyboardKey.keyK) {
+      _searchFocus.requestFocus();
+      return true;
+    }
+    // ⌘/Ctrl + E → new clip
+    if (mod && !shift && key == LogicalKeyboardKey.keyE) {
+      _openEditor();
+      return true;
+    }
+    // ⌘/Ctrl + Shift + V → save clipboard as clip
+    if (mod && shift && key == LogicalKeyboardKey.keyV) {
+      _saveFromClipboard();
+      return true;
+    }
+
+    // The following are only handled when the user isn't typing in search.
+    if (searchHasFocus) return false;
+
     if (key == LogicalKeyboardKey.arrowDown) {
+      if (_visible.isEmpty) return false;
       setState(() => _focusedIndex =
-          (_focusedIndex + 1).clamp(0, visible.length - 1));
-    } else if (key == LogicalKeyboardKey.arrowUp) {
-      setState(() =>
-          _focusedIndex = (_focusedIndex - 1).clamp(0, visible.length - 1));
-    } else if (key == LogicalKeyboardKey.enter && visible.isNotEmpty) {
-      final c = visible[_focusedIndex.clamp(0, visible.length - 1)];
+          (_focusedIndex + 1).clamp(0, _visible.length - 1));
+      return true;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      if (_visible.isEmpty) return false;
+      setState(() => _focusedIndex =
+          (_focusedIndex - 1).clamp(0, _visible.length - 1));
+      return true;
+    }
+    if (key == LogicalKeyboardKey.enter && _visible.isNotEmpty) {
+      final c = _visible[_focusedIndex.clamp(0, _visible.length - 1)];
       Clipboard.setData(ClipboardData(text: c.text));
       _snack('Copied to clipboard');
-    } else if (key == LogicalKeyboardKey.escape) {
+      return true;
+    }
+    if (key == LogicalKeyboardKey.escape) {
       if (_query.isNotEmpty) {
         _searchController.clear();
         setState(() => _query = '');
-      } else if (searchHasFocus) {
-        _searchFocus.unfocus();
-      }
-    } else if (!searchHasFocus &&
-        (key == LogicalKeyboardKey.keyN ||
-            key == LogicalKeyboardKey.keyC)) {
-      // Single-key shortcuts, only when search doesn't have focus.
-      if (key == LogicalKeyboardKey.keyN) {
-        _openEditor();
-      } else if (key == LogicalKeyboardKey.keyC) {
-        _saveFromClipboard();
+        return true;
       }
     }
+    return false;
   }
 
   @override
@@ -172,53 +212,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_focusedIndex >= visible.length) {
       _focusedIndex = visible.isEmpty ? 0 : visible.length - 1;
     }
+    // Expose the current visible list to the hardware-key handler.
+    _visible = visible;
 
-    return Shortcuts(
-      shortcuts: {
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyK):
-            const _FocusSearchIntent(),
-        LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyK):
-            const _FocusSearchIntent(),
-        // NOTE: Chrome reserves ⌘N / Ctrl+N for "new window", so we can't
-        // hook that inside the popup. Instead we use plain `N` when the search
-        // field doesn't have focus (handled in _handleShortcut).
-      },
-      child: Actions(
-        actions: {
-          _FocusSearchIntent: CallbackAction<_FocusSearchIntent>(
-            onInvoke: (_) {
-              _searchFocus.requestFocus();
-              return null;
-            },
-          ),
-        },
-        child: Focus(
-          autofocus: true,
-          onKeyEvent: (node, event) {
-            _handleShortcut(event, visible);
-            return KeyEventResult.ignored;
-          },
-          child: Scaffold(
-            backgroundColor: AppTheme.bg,
-            appBar: _buildAppBar(context),
-            body: Column(
-              children: [
-                if (_shouldShowPeek(provider))
-                  ClipboardPeekCard(
-                    text: _clipboardText!,
-                    onSave: _saveFromClipboard,
-                    onDismiss: _dismissClipboardPeek,
-                  ),
-                Expanded(
-                  child: visible.isEmpty
-                      ? _buildEmptyState()
-                      : _buildList(visible, provider),
-                ),
-                _buildFooter(),
-              ],
+    return Scaffold(
+      backgroundColor: AppTheme.bg,
+      appBar: _buildAppBar(context),
+      body: Column(
+        children: [
+          if (_shouldShowPeek(provider))
+            ClipboardPeekCard(
+              text: _clipboardText!,
+              onSave: _saveFromClipboard,
+              onDismiss: _dismissClipboardPeek,
             ),
+          Expanded(
+            child: visible.isEmpty
+                ? _buildEmptyState()
+                : _buildList(visible, provider),
           ),
-        ),
+          _buildFooter(),
+        ],
       ),
     );
   }
@@ -236,17 +250,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             width: 22,
             height: 22,
           ),
-          const SizedBox(width: 8),
-          const Text(
-            'Copy Clip',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: SearchField(
               controller: _searchController,
@@ -261,9 +265,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               },
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
           Tooltip(
-            message: 'New clip (N)',
+            message: 'New clip (⌘E)',
             child: Material(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -336,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     'Save from clipboard or press ',
                     style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   ),
-                  KbdChip.text(const ['N']),
+                  KbdChip.meta('E'),
                 ],
               ),
           ],
@@ -492,10 +496,6 @@ class _SectionHeader extends StatelessWidget {
       ),
     );
   }
-}
-
-class _FocusSearchIntent extends Intent {
-  const _FocusSearchIntent();
 }
 
 // ignore: unused_element
