@@ -1,14 +1,37 @@
 {
-	"name": "CopyClip: Clipboard For Chrome",
-	"short_name": "CopyClip",
-	"description": "Clipboard for Chrome. Copying your clips just one click away. Easy search, custom labels and pinned clips.",
-	"version": "1.0.0",
-	"content_security_policy": {
-		"extension_pages": "script-src 'self' ; object-src 'self'"
-	},
-	"action": {
-		"default_popup": "index.html",
-		"default_icon": "icons/copy-clip-192.png"
-	},
-	"manifest_version": 3
+  "name": "Copy Clip — Clipboard for Chrome",
+  "short_name": "Copy Clip",
+  "description": "A fast, keyboard-first clipboard manager. Save, search, pin — one click to copy.",
+  "version": "2.0.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icons/copy-clip-192.png",
+    "default_title": "Copy Clip"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "clipboardWrite"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+V",
+        "mac": "Command+Shift+V"
+      },
+      "description": "Open Copy Clip"
+    }
+  },
+  "icons": {
+    "16":  "icons/copy-clip-192.png",
+    "48":  "icons/copy-clip-192.png",
+    "128": "icons/copy-clip-192.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
