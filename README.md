@@ -84,10 +84,4 @@ web/
 
 ---
 
-## Roadmap
-
-- [ ] `chrome.storage.sync` so clips follow you across Chrome installs.
-- [ ] Rich clip types (auto-detect URL / email).
-- [ ] Categories / folders.
-
 Bug reports welcome → https://github.com/pranit-sh/copy-clip/issues
