@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'kbd_chip.dart';
 import '../util/tags.dart';
 import '../util/theme.dart';
 
 /// A compact chip-style tag input.
 ///
-/// * User types a tag → space/comma/enter commits it as a chip.
+/// * User types a tag → space/comma commits it as a chip.
 /// * Backspace on an empty field removes the last chip.
 /// * Suggestions from [suggestions] show up below the field, filtered by
 ///   the current draft text; tapping a suggestion appends it.
@@ -64,13 +65,15 @@ class _TagChipFieldState extends State<TagChipField> {
 
   @override
   Widget build(BuildContext context) {
-    final draft = _controller.text.trim().toLowerCase();
+    // Suggestions are intentionally NOT filtered by the current draft text —
+    // filtering as the user types changes the number of chips and shifts the
+    // layout. We only drop tags that are already added.
     final filteredSuggestions = widget.suggestions
         .where((s) => !widget.value.contains(s))
-        .where((s) => draft.isEmpty || s.contains(draft))
         .take(6)
         .toList();
     final capReached = widget.value.length >= kMaxTagsPerClip;
+    final hasDraft = _controller.text.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,11 +124,12 @@ class _TagChipFieldState extends State<TagChipField> {
               if (!capReached)
                 IntrinsicWidth(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 80, maxWidth: 200),
-                    child: RawKeyboardListener(
+                    constraints:
+                        const BoxConstraints(minWidth: 80, maxWidth: 200),
+                    child: KeyboardListener(
                       focusNode: FocusNode(skipTraversal: true),
-                      onKey: (event) {
-                        if (event is! RawKeyDownEvent) return;
+                      onKeyEvent: (event) {
+                        if (event is! KeyDownEvent) return;
                         if (event.logicalKey == LogicalKeyboardKey.backspace &&
                             _controller.text.isEmpty &&
                             widget.value.isNotEmpty) {
@@ -144,12 +148,34 @@ class _TagChipFieldState extends State<TagChipField> {
                           isDense: true,
                           border: InputBorder.none,
                           hintText: widget.value.isEmpty
-                              ? 'add tags — space or enter'
-                              : '+ tag',
+                              ? 'Type a tag…'
+                              : 'Add another…',
                           hintStyle: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
+                          suffix: hasDraft
+                              ? Padding(
+                                  padding: const EdgeInsets.only(left: 6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      KbdChip.text(const [
+                                        Icons.space_bar_rounded,
+                                      ]),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'to add',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppTheme.textSecondary
+                                              .withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 4,
                             vertical: 6,

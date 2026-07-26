@@ -9,7 +9,6 @@ import 'search.dart';
 import 'tag_filter_bar.dart';
 import 'clip_bottom_sheet.dart';
 import 'clip_list_item.dart';
-import 'clipboard_peek_card.dart';
 import 'kbd_chip.dart';
 import '../helper/clip_note_provider.dart';
 import '../models/clip.dart';
@@ -23,7 +22,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   final _listFocus = FocusNode();
@@ -37,17 +36,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// handler can act on the current filtered results.
   List<Clip> _visible = const [];
 
-  /// Latest text seen on the system clipboard (for the peek card).
-  String? _clipboardText;
-
-  /// Clipboard texts the user explicitly dismissed this session.
-  final Set<String> _dismissedClipboardTexts = <String>{};
   int _snackSerial = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     // Register a hardware-level key handler. Unlike Shortcuts/CallbackShortcuts
     // this does NOT depend on any Focus node being in the current focus chain,
     // which matters for a Chrome-extension popup where focus can end up in a
@@ -58,29 +51,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       _openEditor(prefillText: selection);
     };
-    // Initial clipboard read after first frame (so we can access services).
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshClipboard());
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _refreshClipboard();
-    }
-  }
-
-  Future<void> _refreshClipboard() async {
-    final text = await readClipboardText();
-    if (!mounted) return;
-    if (text != _clipboardText) {
-      setState(() => _clipboardText = text);
-    }
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_onHardwareKey);
-    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocus.dispose();
     _listFocus.dispose();
@@ -139,27 +114,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _saveFromClipboard() async {
-    final data = await Clipboard.getData('text/plain');
-    final text = data?.text?.trim();
-    if (text == null || text.isEmpty) {
-      _snack('Clipboard is empty');
-      return;
-    }
-    await _openEditor(prefillText: text);
-    // Clear the peek card once handled.
-    setState(() => _clipboardText = null);
-  }
-
-  void _dismissClipboardPeek() {
-    if (_clipboardText != null) {
-      _dismissedClipboardTexts.add(_clipboardText!);
-      setState(() => _clipboardText = null);
-    }
-  }
-
   /// Global hardware-key handler. Returns `true` when we've consumed the key
-  /// so Flutter won't dispatch it further. Modifier combos (⌘K/⌘E/⌘⇧V) fire
+  /// so Flutter won't dispatch it further. Modifier combos (⌘K/⌘E) fire
   /// regardless of focus; arrow/enter/escape only fire when the search field
   /// doesn't have focus (so typing in search still works normally).
   bool _onHardwareKey(KeyEvent event) {
@@ -185,25 +141,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _openEditor();
       return true;
     }
-    // ⌘/Ctrl + Shift + V → save clipboard as clip
-    if (mod && shift && key == LogicalKeyboardKey.keyV) {
-      _saveFromClipboard();
-      return true;
-    }
 
     // The following are only handled when the user isn't typing in search.
     if (searchHasFocus) return false;
 
     if (key == LogicalKeyboardKey.arrowDown) {
       if (_visible.isEmpty) return false;
-      setState(() => _focusedIndex =
-          (_focusedIndex + 1).clamp(0, _visible.length - 1));
+      setState(() =>
+          _focusedIndex = (_focusedIndex + 1).clamp(0, _visible.length - 1));
       return true;
     }
     if (key == LogicalKeyboardKey.arrowUp) {
       if (_visible.isEmpty) return false;
-      setState(() => _focusedIndex =
-          (_focusedIndex - 1).clamp(0, _visible.length - 1));
+      setState(() =>
+          _focusedIndex = (_focusedIndex - 1).clamp(0, _visible.length - 1));
       return true;
     }
     if (key == LogicalKeyboardKey.enter && _visible.isNotEmpty) {
@@ -258,12 +209,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               _focusedIndex = 0;
             }),
           ),
-          if (_shouldShowPeek(provider))
-            ClipboardPeekCard(
-              text: _clipboardText!,
-              onSave: _saveFromClipboard,
-              onDismiss: _dismissClipboardPeek,
-            ),
+          if (provider.items.isNotEmpty)
+            _buildListToolbar(provider, visible.length),
           Expanded(
             child: visible.isEmpty
                 ? _buildEmptyState()
@@ -333,15 +280,66 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  bool _shouldShowPeek(ClipNoteProvider provider) {
-    final t = _clipboardText;
-    if (t == null || t.isEmpty) return false;
-    if (_dismissedClipboardTexts.contains(t)) return false;
-    // Skip if we already have this text saved.
-    for (final c in provider.items) {
-      if (c.text.trim() == t) return false;
-    }
-    return true;
+  Widget _buildListToolbar(ClipNoteProvider provider, int visibleCount) {
+    final totalCount = provider.items.length;
+    final countLabel = visibleCount == totalCount
+        ? totalCount == 1
+            ? '1 clip'
+            : '$totalCount clips'
+        : '$visibleCount of $totalCount shown';
+
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: AppTheme.bg,
+        border: Border(
+          bottom: BorderSide(color: AppTheme.border, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            countLabel,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          Tooltip(
+            message: 'Delete every saved clip',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(5),
+              onTap: () => _confirmClearAll(provider),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.delete_sweep_outlined,
+                      size: 14,
+                      color: AppTheme.danger,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Clear all',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.danger,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState() {
@@ -353,7 +351,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              hasQuery ? Icons.search_off_rounded : Icons.content_paste_off_rounded,
+              hasQuery
+                  ? Icons.search_off_rounded
+                  : Icons.content_paste_off_rounded,
               size: 40,
               color: AppTheme.textSecondary.withValues(alpha: 0.6),
             ),
@@ -378,10 +378,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'Save from clipboard or press ',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    'Press ',
+                    style:
+                        TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                   ),
                   KbdChip.meta('E'),
+                  const Text(
+                    ' to create one.',
+                    style:
+                        TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
                 ],
               ),
           ],
@@ -514,6 +520,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
+
+  Future<void> _confirmClearAll(ClipNoteProvider provider) async {
+    if (provider.items.isEmpty) return;
+
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Clear all clips?'),
+        content: const Text(
+          'This deletes every saved clip. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Clear all'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldClear != true || !mounted) return;
+    final deletedCount = provider.items.length;
+    await provider.clearAll();
+    if (!mounted) return;
+    _snack(
+        deletedCount == 1 ? '1 clip cleared' : '$deletedCount clips cleared');
+  }
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -568,9 +606,8 @@ class _NewClipButtonState extends State<_NewClipButton> {
           curve: Curves.easeOut,
           height: 32,
           decoration: BoxDecoration(
-            color: _hovered
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.94),
+            color:
+                _hovered ? Colors.white : Colors.white.withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(

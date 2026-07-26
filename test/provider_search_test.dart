@@ -71,6 +71,22 @@ void main() {
     expect(p.items.first.userTags, containsAll(['a', 'b']));
   });
 
+  test('clearAll removes clips and persists empty state', () async {
+    final p = ClipNoteProvider();
+    await p.load();
+    await p.addClip(Clip(text: 'hello', userTags: ['a']));
+    await p.addClip(Clip(text: 'world', userTags: ['b']));
+
+    await p.clearAll();
+
+    expect(p.items, isEmpty);
+    expect(p.userTagUsage, isEmpty);
+
+    final reloaded = ClipNoteProvider();
+    await reloaded.load();
+    expect(reloaded.items, isEmpty);
+  });
+
   test('is:pinned filter works', () async {
     final p = ClipNoteProvider();
     await p.load();

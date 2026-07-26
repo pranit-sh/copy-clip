@@ -52,7 +52,8 @@ class ClipNoteProvider extends ChangeNotifier {
   /// carrying that tag (user- or auto-).
   List<Clip> search(String query, {String? activeTag}) {
     final trimmed = query.trim();
-    final tokens = trimmed.isEmpty ? const <String>[] : trimmed.split(RegExp(r'\s+'));
+    final tokens =
+        trimmed.isEmpty ? const <String>[] : trimmed.split(RegExp(r'\s+'));
 
     final requiredTags = <String>[];
     var pinnedOnly = false;
@@ -138,6 +139,13 @@ class ClipNoteProvider extends ChangeNotifier {
 
   Future<void> removeById(String id) async {
     _items.removeWhere((c) => c.id == id);
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> clearAll() async {
+    if (_items.isEmpty) return;
+    _items.clear();
     await _persist();
     notifyListeners();
   }
