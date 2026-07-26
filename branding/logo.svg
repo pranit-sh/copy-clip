@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background tile -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#FFFFFF"/>
+  <rect x="4.5" y="4.5" width="119" height="119" rx="27.5" stroke="#2563EB" stroke-opacity="0.15"/>
+
+  <!-- Bottom card (darkest, most rotated left) -->
+  <g transform="rotate(-10 64 74)">
+    <rect x="24" y="46" width="80" height="56" rx="10" fill="#1E4FCC"/>
+  </g>
+
+  <!-- Middle card -->
+  <g transform="rotate(-2 64 68)">
+    <rect x="22" y="40" width="84" height="58" rx="10" fill="#2563EB"/>
+  </g>
+
+  <!-- Top card (lightest, slight positive rotation) -->
+  <g transform="rotate(6 64 60)">
+    <rect x="20" y="30" width="88" height="60" rx="10" fill="#4C82F2"/>
+  </g>
+</svg>

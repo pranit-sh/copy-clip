@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -230,8 +231,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       toolbarHeight: 52,
       title: Row(
         children: [
-          const Icon(Icons.content_paste_rounded,
-              color: Colors.white, size: 18),
+          SvgPicture.asset(
+            'assets/logo.svg',
+            width: 22,
+            height: 22,
+          ),
           const SizedBox(width: 8),
           const Text(
             'Copy Clip',
