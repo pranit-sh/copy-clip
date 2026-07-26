@@ -122,11 +122,9 @@ class _TagChipFieldState extends State<TagChipField> {
                 ),
               // Hidden-when-full input.
               if (!capReached)
-                IntrinsicWidth(
-                  child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(minWidth: 80, maxWidth: 200),
-                    child: KeyboardListener(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: double.infinity),
+                  child: KeyboardListener(
                       focusNode: FocusNode(skipTraversal: true),
                       onKeyEvent: (event) {
                         if (event is! KeyDownEvent) return;
@@ -198,7 +196,6 @@ class _TagChipFieldState extends State<TagChipField> {
                       ),
                     ),
                   ),
-                ),
             ],
           ),
         ),

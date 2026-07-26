@@ -226,7 +226,6 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
                     child: FilledButton(
                       onPressed: _save,
                       style: FilledButton.styleFrom(

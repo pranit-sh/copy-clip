@@ -486,15 +486,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Text(' · ', style: dotStyle),
-          InkWell(
-            onTap: () => launchUrl(
-              Uri.parse('https://github.com/pranit-sh/copy-clip'),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              child: Text('GitHub', style: linkStyle),
-            ),
-          ),
           const Spacer(),
           InkWell(
             onTap: () => launchUrl(
