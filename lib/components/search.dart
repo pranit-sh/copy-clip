@@ -32,13 +32,13 @@ class SearchField extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
           hintText: 'Search clips…',
           hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.65),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 13,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
             size: 18,
-            color: Colors.white.withValues(alpha: 0.75),
+            color: Colors.white.withValues(alpha: 0.85),
           ),
           suffixIcon: hasText
               ? IconButton(
@@ -48,7 +48,7 @@ class SearchField extends StatelessWidget {
                   onPressed: onClear,
                   icon: Icon(
                     Icons.close_rounded,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: Colors.white.withValues(alpha: 0.85),
                   ),
                 )
               : Center(
@@ -66,16 +66,19 @@ class SearchField extends StatelessWidget {
           prefixIconConstraints:
               const BoxConstraints(minWidth: 36, minHeight: 36),
           filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.15),
+          fillColor: Colors.white.withValues(alpha: 0.18),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.18),
+              width: 1,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1,
+              color: Colors.white.withValues(alpha: 0.7),
+              width: 1.2,
             ),
           ),
         ),

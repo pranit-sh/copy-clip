@@ -28,6 +28,21 @@ class AppTheme {
         bodyColor: textPrimary,
         displayColor: textPrimary,
       ),
+      tooltipTheme: TooltipThemeData(
+        waitDuration: const Duration(milliseconds: 600),
+        showDuration: const Duration(milliseconds: 1500),
+        preferBelow: true,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        textStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111827).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: Color(0xFF111827),

@@ -238,57 +238,60 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: AppTheme.primary,
-      elevation: 0,
-      titleSpacing: 12,
-      toolbarHeight: 52,
-      title: Row(
-        children: [
-          SvgPicture.asset(
-            'assets/logo.svg',
-            width: 22,
-            height: 22,
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.primary, AppTheme.primaryDark],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: SearchField(
-              controller: _searchController,
-              focusNode: _searchFocus,
-              onChanged: (v) => setState(() {
-                _query = v;
-                _focusedIndex = 0;
-              }),
-              onClear: () {
-                _searchController.clear();
-                setState(() => _query = '');
-              },
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryDark.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 16),
-          Tooltip(
-            message: 'New clip (⌘E)',
-            child: Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: () => _openEditor(),
-                borderRadius: BorderRadius.circular(8),
-                child: const SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Icon(
-                    Icons.add_rounded,
-                    size: 20,
-                    color: AppTheme.primary,
+          ],
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Row(
+              children: [
+                // Brand mark
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: SvgPicture.asset(
+                    'assets/logo.svg',
+                    width: 24,
+                    height: 24,
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SearchField(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    onChanged: (v) => setState(() {
+                      _query = v;
+                      _focusedIndex = 0;
+                    }),
+                    onClear: () {
+                      _searchController.clear();
+                      setState(() => _query = '');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _NewClipButton(onTap: () => _openEditor()),
+              ],
             ),
           ),
-        ],
+        ),
       ),
-      actions: const [],
     );
   }
 
@@ -500,3 +503,75 @@ class _SectionHeader extends StatelessWidget {
 
 // ignore: unused_element
 bool get _kIsWebRef => kIsWeb;
+
+class _NewClipButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _NewClipButton({required this.onTap});
+
+  @override
+  State<_NewClipButton> createState() => _NewClipButtonState();
+}
+
+class _NewClipButtonState extends State<_NewClipButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'New clip (⌘E)',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          height: 36,
+          decoration: BoxDecoration(
+            color: _hovered
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _hovered ? 0.18 : 0.10),
+                blurRadius: _hovered ? 10 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(10),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_rounded,
+                      size: 18,
+                      color: AppTheme.primary,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'New',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
