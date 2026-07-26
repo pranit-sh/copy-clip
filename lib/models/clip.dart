@@ -3,48 +3,44 @@ import 'package:uuid/uuid.dart';
 class Clip {
   final String id;
   final String text;
-  bool pinned;
-  final List<String> labelIDs;
-  final String createdAt;
   final String title;
-  final List<String> labels;
+  bool pinned;
+  final DateTime createdAt;
 
   Clip({
     required this.text,
     String? id,
-    bool? pinned,
-    List<String>? labelIDs,
-    String? createdAt,
     String? title,
-    List<String>? labels,
+    bool? pinned,
+    DateTime? createdAt,
   })  : id = id ?? const Uuid().v4(),
-        pinned = pinned ?? false,
-        labelIDs = labelIDs ?? [],
-        createdAt = createdAt ?? DateTime.now().toIso8601String(),
         title = title ?? '',
-        labels = labels ?? [];
+        pinned = pinned ?? false,
+        createdAt = createdAt ?? DateTime.now();
 
-  factory Clip.fromJson(Map<String, dynamic> json) {
-    return Clip(
-      id: json['id'] as String?,
-      text: json['text'] as String,
-      pinned: json['pinned'] as bool?,
-      labelIDs: (json['labelIDs'] as List<dynamic>?)?.cast<String>(),
-      createdAt: json['createdAt'] as String?,
-      title: json['title'] as String?,
-      labels: (json['labels'] as List<dynamic>?)?.cast<String>(),
-    );
-  }
+  Clip copyWith({String? text, String? title, bool? pinned}) => Clip(
+        id: id,
+        text: text ?? this.text,
+        title: title ?? this.title,
+        pinned: pinned ?? this.pinned,
+        createdAt: createdAt,
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'text': text,
-      'pinned': pinned,
-      'labelIDs': labelIDs,
-      'createdAt': createdAt,
-      'title': title,
-      'labels': labels,
-    };
-  }
+  factory Clip.fromJson(Map<String, dynamic> json) => Clip(
+        id: json['id'] as String?,
+        text: json['text'] as String? ?? '',
+        title: json['title'] as String?,
+        pinned: json['pinned'] as bool?,
+        createdAt: json['createdAt'] != null
+            ? DateTime.tryParse(json['createdAt'] as String)
+            : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        'title': title,
+        'pinned': pinned,
+        'createdAt': createdAt.toIso8601String(),
+      };
 }

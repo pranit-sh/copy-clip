@@ -1,38 +1,45 @@
 <!DOCTYPE html>
 <html>
-<<html style="height: 500px; width: 300px">
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+<head>
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Copy Clip — fast clipboard manager for Chrome.">
 
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="copy_clip">
+  <meta name="apple-mobile-web-app-title" content="Copy Clip">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>copy_clip</title>
+  <title>Copy Clip</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background: #F7F8FA;
+      overflow: hidden;
+    }
+    /* Only lock to popup dimensions when running as the Chrome extension
+       popup (bootstrap script adds .is-popup). In `flutter run -d chrome`
+       the app fills the whole window instead. */
+    html.is-popup, html.is-popup body {
+      width: 360px;
+      height: 520px;
+    }
+    #splash {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: #6B7280; font: 500 12px system-ui, -apple-system, sans-serif;
+    }
+  </style>
 </head>
 <body>
-  <script src="main.dart.js" type="application/javascript"></script>
+  <div id="splash">Loading…</div>
+  <script src="popup_bootstrap.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
