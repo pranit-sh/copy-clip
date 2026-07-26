@@ -12,15 +12,15 @@ Built with Flutter Web and packaged as a Chrome Manifest V3 extension.
 - 📋 **Tap to copy** — click any clip to put it back on your clipboard.
 - 📌 **Pin** — pinned clips stay on top and can be **reordered by drag**.
 - 🔎 **Instant search** — filter by title or content as you type.
-- ⚡ **Save from clipboard** — one button captures whatever you just copied.
+- 🏷️ **Tags** — organize clips with optional user and auto-detected tags.
+- 🗑️ **Clear all** — bulk delete with undo via snackbar.
 - 🖱️ **Right-click "Save selection to Copy Clip"** — save from any page.
 - ⌨️ **Keyboard first**
-    - `⌘/Ctrl + Shift + V` — open Copy Clip
     - `⌘/Ctrl + K` — focus search
-    - `⌘/Ctrl + N` — new clip
+    - `⌘/Ctrl + E` — new clip
     - `↑ / ↓` — move focus in the list
     - `Enter` — copy the focused clip
-    - `Esc` — clear search
+    - `Esc` — clear search or filter
     - `⌘/Ctrl + Enter` inside the editor — save
 
 Data is stored locally with `SharedPreferences` (via `chrome.storage` on the
