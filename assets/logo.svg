@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <!-- Background tile -->
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="#2563EB"/>
-
-  <!-- Back sheet -->
-  <rect x="34" y="30" width="48" height="60" rx="12" fill="#FFFFFF" fill-opacity="0.4"/>
-
-  <!-- Front sheet -->
-  <rect x="46" y="42" width="48" height="60" rx="12" fill="#FFFFFF"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2041_771)">
+<rect width="512" height="512" rx="128" fill="white"/>
+<rect width="512" height="512" fill="#2563EB"/>
+<path d="M373.937 383.5H217.75C215.214 383.5 212.782 382.493 210.988 380.699C209.195 378.906 208.188 376.474 208.188 373.937V217.75C208.187 215.214 209.195 212.782 210.988 210.988C212.782 209.195 215.214 208.188 217.75 208.188H373.937C376.474 208.187 378.906 209.195 380.699 210.988C382.493 212.782 383.5 215.214 383.5 217.75V373.937C383.5 376.474 382.493 378.906 380.699 380.699C378.906 382.493 376.474 383.5 373.937 383.5Z" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M303.812 208.188V138.062C303.812 135.526 302.805 133.094 301.012 131.301C299.218 129.507 296.786 128.5 294.25 128.5H138.062C135.526 128.5 133.094 129.507 131.301 131.301C129.507 133.094 128.5 135.526 128.5 138.062V294.25C128.5 296.786 129.507 299.218 131.301 301.012C133.094 302.805 135.526 303.812 138.062 303.812H208.188" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_2041_771">
+<rect width="512" height="512" rx="128" fill="white"/>
+</clipPath>
+</defs>
 </svg>
