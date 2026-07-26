@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background tile -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#2563EB"/>
+
+  <!-- Back sheet (bolder + larger for legibility at 16-48px) -->
+  <rect x="28" y="26" width="54" height="66" rx="12" fill="#FFFFFF" fill-opacity="0.4"/>
+
+  <!-- Front sheet -->
+  <rect x="46" y="40" width="54" height="66" rx="12" fill="#FFFFFF"/>
+</svg>

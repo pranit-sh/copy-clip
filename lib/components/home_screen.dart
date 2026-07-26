@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -250,16 +249,6 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: Row(
               children: [
-                // Brand mark
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: SvgPicture.asset(
-                    'assets/logo.svg',
-                    width: 22,
-                    height: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: SearchField(
                     controller: _searchController,

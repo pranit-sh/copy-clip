@@ -210,18 +210,24 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: TextButton(
+                    child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
+                      style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        foregroundColor: AppTheme.textSecondary,
+                        foregroundColor: AppTheme.textPrimary,
+                        backgroundColor: AppTheme.bg,
+                        side: const BorderSide(color: AppTheme.border),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: AppTheme.border),
                         ),
                       ),
-                      child: const Text('Cancel',
-                          style: TextStyle(fontSize: 13)),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
