@@ -64,7 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _snack(String message, {SnackBarAction? action}) {
-    const duration = Duration(milliseconds: 1400);
+    // Snackbars with an action (e.g. UNDO) stay longer so there's time to act;
+    // plain confirmations disappear quickly.
+    final duration = action != null
+        ? const Duration(milliseconds: 4000)
+        : const Duration(milliseconds: 1400);
     final snackSerial = ++_snackSerial;
     final messenger = ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -524,33 +528,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _confirmClearAll(ClipNoteProvider provider) async {
     if (provider.items.isEmpty) return;
 
-    final shouldClear = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear all clips?'),
-        content: const Text(
-          'This deletes every saved clip. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppTheme.danger),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Clear all'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldClear != true || !mounted) return;
-    final deletedCount = provider.items.length;
+    // Snapshot the current clips so the action can be undone from the snackbar.
+    final snapshot = List<Clip>.from(provider.items);
     await provider.clearAll();
     if (!mounted) return;
     _snack(
-        deletedCount == 1 ? '1 clip cleared' : '$deletedCount clips cleared');
+      snapshot.length == 1 ? '1 clip cleared' : '${snapshot.length} clips cleared',
+      action: SnackBarAction(
+        label: 'UNDO',
+        textColor: Colors.white,
+        onPressed: () => provider.restoreAll(snapshot),
+      ),
+    );
   }
 }
 

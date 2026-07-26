@@ -150,6 +150,16 @@ class ClipNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Restore a previous snapshot of clips (used to undo [clearAll]).
+  /// Replaces the current list wholesale, preserving order and pinned state.
+  Future<void> restoreAll(List<Clip> clips) async {
+    _items
+      ..clear()
+      ..addAll(clips);
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> togglePin(String id) async {
     final idx = _items.indexWhere((c) => c.id == id);
     if (idx == -1) return;
