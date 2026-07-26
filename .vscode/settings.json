@@ -1,0 +1,10 @@
+{
+  // `web/flutter_bootstrap.js` is a Flutter template, not standalone JS.
+  // It contains Mustache tokens like `{{flutter_js}}` that the Flutter
+  // build replaces before emitting to `build/web/`. Treat it as plain
+  // text in the editor so the JS parser doesn't flag syntax errors.
+  "files.associations": {
+    "**/web/flutter_bootstrap.js": "plaintext"
+  }
+}
+

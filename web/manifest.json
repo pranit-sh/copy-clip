@@ -6,8 +6,19 @@
   "manifest_version": 3,
   "action": {
     "default_popup": "index.html",
-    "default_icon": "icons/copy-clip-192.png",
-    "default_title": "Copy Clip"
+    "default_title": "Copy Clip",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "background": {
     "service_worker": "background.js"
@@ -26,12 +37,7 @@
       "description": "Open Copy Clip"
     }
   },
-  "icons": {
-    "16":  "icons/copy-clip-192.png",
-    "48":  "icons/copy-clip-192.png",
-    "128": "icons/copy-clip-192.png"
-  },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
